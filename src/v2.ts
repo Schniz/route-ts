@@ -278,17 +278,6 @@ export class Chain<
       },
     });
   }
-
-  getParser(): FlatParser<
-    ProvidesContext,
-    RequiresContext,
-    Returns,
-    NextReturns,
-    ProvidesAnnotation,
-    RequiresAnnotation
-  > {
-    return { ...this.parser };
-  }
 }
 
 export function route<Context, Returns, Ann, C2, R2, A2>(
