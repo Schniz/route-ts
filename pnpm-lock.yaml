@@ -4,12 +4,14 @@ specifiers:
   '@edge-runtime/vm': ^2.1.2
   tsup: ^6.7.0
   typescript: ^5.0.3
+  urlpattern-polyfill: ^6.0.2
   vitest: ^0.29.8
 
 devDependencies:
   '@edge-runtime/vm': 2.1.2
   tsup: 6.7.0_typescript@5.0.3
   typescript: 5.0.3
+  urlpattern-polyfill: 6.0.2
   vitest: 0.29.8_@edge-runtime+vm@2.1.2
 
 packages:
@@ -1140,6 +1142,12 @@ packages:
 
   /ufo/1.1.1:
     resolution: {integrity: sha512-MvlCc4GHrmZdAllBc0iUDowff36Q9Ndw/UzqmEKyrfSzokTd9ZCy1i+IIk5hrYKkjoYVQyNbrw7/F8XJ2rEwTg==}
+    dev: true
+
+  /urlpattern-polyfill/6.0.2:
+    resolution: {integrity: sha512-5vZjFlH9ofROmuWmXM9yj2wljYKgWstGwe8YTyiqM7hVum/g9LyCizPZtb3UqsuppVwety9QJmfc42VggLpTgg==}
+    dependencies:
+      braces: 3.0.2
     dev: true
 
   /vite-node/0.29.8_@types+node@18.15.11:
