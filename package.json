@@ -1,14 +1,20 @@
 {
   "name": "rou-ts",
-  "version": "1.0.0",
+  "version": "0.0.0",
   "description": "",
-  "main": "index.js",
+  "files": [
+    "dist"
+  ],
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "tsup",
+    "test": "vitest"
   },
   "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "author": "Gal Schlezinger <gal@spitfire.co.il>",
+  "license": "MIT",
   "devDependencies": {
     "@edge-runtime/vm": "^2.1.2",
     "tsup": "^6.7.0",
