@@ -14,33 +14,17 @@ type FlatParser<
   NextReturns,
   ProvidesAnnotation,
   RequiresAnnotation
-> = {
-  annotate(
-    current: RequiresAnnotation,
-    next: NextFn<void, ProvidesAnnotation>
-  ): MaybePromise<void>;
-  middleware: Middleware<
-    ProvidesContext,
-    RequiresContext,
-    Returns,
-    NextReturns
-  >;
-  tag?: string;
-};
+> = Parser<{
+  context: { in: RequiresContext; out: ProvidesContext };
+  return: { in: NextReturns; out: Returns };
+  annotation: { in: RequiresAnnotation; out: ProvidesAnnotation };
+}>;
 type Nothing = Record<string, never>;
 
 type InOut<In = any, Out = any> = {
   in: In;
   out: Out;
 };
-type ObjParser_<C extends InOut, R extends InOut, A extends InOut> = FlatParser<
-  C["out"],
-  C["in"],
-  R["out"],
-  R["in"],
-  A["out"],
-  A["in"]
->;
 
 // TODO: consolidate to a single Parser
 export type Parser<
@@ -49,7 +33,19 @@ export type Parser<
     return: InOut;
     annotation: InOut;
   }
-> = ObjParser_<C["context"], C["return"], C["annotation"]>;
+> = {
+  annotate(
+    current: C["annotation"]["in"],
+    next: NextFn<void, C["annotation"]["out"]>
+  ): MaybePromise<void>;
+  middleware: Middleware<
+    C["context"]["out"],
+    C["context"]["in"],
+    C["return"]["out"],
+    C["return"]["in"]
+  >;
+  tag?: string;
+};
 
 export type HttpContext = {
   /** The incoming request */
