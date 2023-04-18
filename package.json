@@ -20,6 +20,6 @@
     "tsup": "^6.7.0",
     "typescript": "^5.0.3",
     "urlpattern-polyfill": "^6.0.2",
-    "vitest": "^0.29.8"
+    "vitest": "^0.30.1"
   }
 }
