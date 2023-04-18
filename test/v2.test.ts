@@ -1,4 +1,4 @@
-import { Chain, http, route, ParserConfig } from "../src/v2";
+import { Chain, http, continues, ParserConfig } from "../src/v2";
 import { method } from "../src/v2/method";
 import { pathname } from "../src/v2/pathname";
 import { jsonResponse } from "../src/v2/json-response";
@@ -13,7 +13,7 @@ const c = new Chain(http<{ hello: "world" }>())
   .with(openApi())
   .match((from) => {
     return [
-      route(from)
+      continues(from)
         .with(method("GET"))
         .with(pathname("/hello/:param"))
         .handler(async (context) => {
@@ -21,7 +21,7 @@ const c = new Chain(http<{ hello: "world" }>())
             "Hello from " + JSON.stringify(context.path.params)
           );
         }),
-      route(from)
+      continues(from)
         .with(method("POST"))
         .with(pathname("/hello/:param"))
         .with(jsonResponse())
@@ -32,7 +32,7 @@ const c = new Chain(http<{ hello: "world" }>())
             headers: {},
           };
         }),
-      route(from)
+      continues(from)
         .with(method("PUT"))
         .with(pathname("/another/route"))
         .handler(async (_context) => {
@@ -45,8 +45,8 @@ const c = new Chain(http<{ hello: "world" }>())
 
 const with404 = new Chain(http<{ hello: "world" }>()).match((from) => {
   return [
-    route(from).with(c),
-    route(from).handler(async () => {
+    continues(from).with(c),
+    continues(from).handler(async () => {
       return new Response("Not found", { status: 404 });
     }),
   ];

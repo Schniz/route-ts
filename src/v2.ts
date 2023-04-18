@@ -1,12 +1,26 @@
 import type { Attaches, Passthrough } from "./v2/type-modifiers";
 
+/**
+ * Either T or a promise of T.
+ * @template T the type of the value
+ */
 type MaybePromise<T> = T | Promise<T>;
+
+/**
+ * A function that takes an input and returns a value which may be a promise.
+ *
+ * @template Returns the type of the return value
+ * @template Env the input type
+ */
 type NextFn<Returns, Env> = (env: Env) => MaybePromise<Returns | undefined>;
 type Middleware<ProvidesContext, RequiresContext, Returns, NextReturns> = (
   context: RequiresContext,
   next: NextFn<NextReturns, ProvidesContext>
 ) => MaybePromise<Returns | undefined>;
 
+/**
+ * A flat representation of {@link Parser}.
+ */
 type FlatParser<
   ProvidesContext,
   RequiresContext,
@@ -19,6 +33,10 @@ type FlatParser<
   return: { in: NextReturns; out: Returns };
   annotation: { in: RequiresAnnotation; out: ProvidesAnnotation };
 }>;
+
+/**
+ * An empty object
+ */
 type Nothing = Record<string, never>;
 
 type InOut<In = any, Out = any> = {
@@ -26,24 +44,50 @@ type InOut<In = any, Out = any> = {
   out: Out;
 };
 
-// TODO: consolidate to a single Parser
+/**
+ * a Parser is a structure that parses and optionally forwards a request.
+ */
 export type Parser<
-  C extends {
+  Config extends {
+    /**
+     * The input/output context
+     */
     context: InOut;
+    /**
+     * The input/output return value
+     * The output would be whatever the previous parser expects as input.
+     * The input would be what the next parser expects as output, or: what the {@link NextFn} middleware function will return.
+     */
     return: InOut;
+    /**
+     * The input/output annotation
+     */
     annotation: InOut;
   }
 > = {
+  /**
+   * Annotate the request with some data.
+   * This takes the parser input annotation and forwards using the `next` function
+   * the output annotation.
+   */
   annotate(
-    current: C["annotation"]["in"],
-    next: NextFn<void, C["annotation"]["out"]>
+    current: Config["annotation"]["in"],
+    next: NextFn<void, Config["annotation"]["out"]>
   ): MaybePromise<void>;
+  /**
+   * The middleware function that will be called by the router.
+   * This takes the parser input context and forwards using the `next` function
+   * the output context.
+   */
   middleware: Middleware<
-    C["context"]["out"],
-    C["context"]["in"],
-    C["return"]["out"],
-    C["return"]["in"]
+    Config["context"]["out"],
+    Config["context"]["in"],
+    Config["return"]["out"],
+    Config["return"]["in"]
   >;
+  /**
+   * A tag to identify the parser. This is useful for debugging.
+   */
   tag?: string;
 };
 
@@ -54,6 +98,13 @@ export type HttpContext = {
   /** The parsed URL */
   url: URL;
 };
+
+/**
+ * Start an http routing.
+ * Adds a `url` property to the context.
+ *
+ * @template Context an input context that the router expects. Omitting it will default to a { request } object.
+ */
 export function http<Context = Nothing>(): Parser<{
   context: Attaches<Context & { request: Request }, { url: URL }>;
   return: Passthrough<Response>;
@@ -276,7 +327,14 @@ export class Chain<
   }
 }
 
-export function route<Context, Returns, Ann, C2, R2, A2>(
+/**
+ * Infer a router that depends on a previous router.
+ * This is handy when `match`ing, as you want to _continue_
+ * the previous route definition.
+ *
+ * It is basically to make TypeScript infer better.
+ */
+export function continues<Context, Returns, Ann, C2, R2, A2>(
   _from?: Parser<{
     annotation: { in: A2; out: Ann };
     context: { in: C2; out: Context };
