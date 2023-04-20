@@ -19,16 +19,16 @@ type Middleware<ProvidesContext, RequiresContext, Returns, NextReturns> = (
 ) => MaybePromise<Returns | undefined>;
 
 /**
- * A flat representation of {@link Parser}.
+ * A flat representation of {@link Layer}.
  */
-type FlatParser<
+type FlatLayer<
   ProvidesContext,
   RequiresContext,
   Returns,
   NextReturns,
   ProvidesAnnotation,
   RequiresAnnotation
-> = Parser<{
+> = Layer<{
   context: { in: RequiresContext; out: ProvidesContext };
   return: { in: NextReturns; out: Returns };
   annotation: { in: RequiresAnnotation; out: ProvidesAnnotation };
@@ -45,9 +45,9 @@ type InOut<In = any, Out = any> = {
 };
 
 /**
- * a Parser is a structure that parses and optionally forwards a request.
+ * a Layer is a structure that parses and optionally forwards a request.
  */
-export type Parser<
+export type Layer<
   Config extends {
     /**
      * The input/output context
@@ -55,8 +55,8 @@ export type Parser<
     context: InOut;
     /**
      * The input/output return value
-     * The output would be whatever the previous parser expects as input.
-     * The input would be what the next parser expects as output, or: what the {@link NextFn} middleware function will return.
+     * The output would be whatever the previous layer expects as input.
+     * The input would be what the next layer expects as output, or: what the {@link NextFn} middleware function will return.
      */
     return: InOut;
     /**
@@ -67,7 +67,7 @@ export type Parser<
 > = {
   /**
    * Annotate the request with some data.
-   * This takes the parser input annotation and forwards using the `next` function
+   * This takes the layer input annotation and forwards using the `next` function
    * the output annotation.
    */
   annotate(
@@ -76,7 +76,7 @@ export type Parser<
   ): MaybePromise<void>;
   /**
    * The middleware function that will be called by the router.
-   * This takes the parser input context and forwards using the `next` function
+   * This takes the layer input context and forwards using the `next` function
    * the output context.
    */
   middleware: Middleware<
@@ -86,7 +86,7 @@ export type Parser<
     Config["return"]["in"]
   >;
   /**
-   * A tag to identify the parser. This is useful for debugging.
+   * A tag to identify the layer. This is useful for debugging.
    */
   tag?: string;
 };
@@ -105,7 +105,7 @@ export type HttpContext = {
  *
  * @template Context an input context that the router expects. Omitting it will default to a { request } object.
  */
-export function http<Context = Nothing>(): Parser<{
+export function http<Context = Nothing>(): Layer<{
   context: Attaches<Context & { request: Request }, { url: URL }>;
   return: Passthrough<Response>;
   annotation: Passthrough<Nothing>;
@@ -121,7 +121,7 @@ export function http<Context = Nothing>(): Parser<{
   };
 }
 
-export type ParserConfig<T> = T extends FlatParser<
+export type LayerConfig<T> = T extends FlatLayer<
   infer ProvidesContext,
   infer RequiresContext,
   infer Returns,
@@ -144,7 +144,7 @@ export class Chain<
   ProvidesAnnotation,
   RequiresAnnotation
 > implements
-    FlatParser<
+    FlatLayer<
       ProvidesContext,
       RequiresContext,
       Returns,
@@ -154,7 +154,7 @@ export class Chain<
     >
 {
   constructor(
-    private readonly parser: FlatParser<
+    private readonly layer: FlatLayer<
       ProvidesContext,
       RequiresContext,
       Returns,
@@ -168,7 +168,7 @@ export class Chain<
     annotations: RequiresAnnotation,
     next: NextFn<void, ProvidesAnnotation>
   ): MaybePromise<void> {
-    return this.parser.annotate(annotations, next);
+    return this.layer.annotate(annotations, next);
   }
   get middleware(): Middleware<
     ProvidesContext,
@@ -176,7 +176,11 @@ export class Chain<
     Returns,
     NextReturns
   > {
-    return this.parser.middleware;
+    return this.layer.middleware;
+  }
+
+  get tag(): string | undefined {
+    return this.layer.tag;
   }
 
   prettifyGenerics(): Chain<
@@ -192,7 +196,7 @@ export class Chain<
 
   with<ProvidesContext2, ProvidesAnnotation2, NextReturns2>(
     fn:
-      | FlatParser<
+      | FlatLayer<
           ProvidesContext2,
           ProvidesContext,
           NextReturns,
@@ -201,7 +205,7 @@ export class Chain<
           ProvidesAnnotation
         >
       | ((
-          parser: FlatParser<
+          layer: FlatLayer<
             ProvidesContext,
             RequiresContext,
             Returns,
@@ -209,7 +213,7 @@ export class Chain<
             ProvidesAnnotation,
             RequiresAnnotation
           >
-        ) => FlatParser<
+        ) => FlatLayer<
           ProvidesContext2,
           ProvidesContext,
           NextReturns,
@@ -225,7 +229,7 @@ export class Chain<
     ProvidesAnnotation2,
     RequiresAnnotation
   > {
-    const nextParser = typeof fn === "function" ? fn(this.parser) : fn;
+    const nextLayer = typeof fn === "function" ? fn(this.layer) : fn;
     return new Chain<
       ProvidesContext2,
       RequiresContext,
@@ -235,22 +239,23 @@ export class Chain<
       RequiresAnnotation
     >({
       annotate: async (annotations, next) => {
-        return this.parser.annotate(annotations, async (annotations) => {
-          return nextParser.annotate(annotations, next);
+        return this.layer.annotate(annotations, async (annotations) => {
+          return nextLayer.annotate(annotations, next);
         });
       },
       middleware: async (context, next) => {
-        const v = await this.parser.middleware(context, async (context) => {
-          return nextParser.middleware(context, next);
+        const v = await this.layer.middleware(context, async (context) => {
+          return nextLayer.middleware(context, next);
         });
         return v;
       },
+      tag: [this.layer.tag, nextLayer.tag].filter(Boolean).join(" -> "),
     });
   }
 
   handler(
     fn: (context: ProvidesContext) => Promise<NextReturns>
-  ): FlatParser<
+  ): FlatLayer<
     ProvidesContext,
     RequiresContext,
     Returns,
@@ -259,17 +264,18 @@ export class Chain<
     RequiresAnnotation
   > {
     return {
-      annotate: this.parser.annotate,
+      annotate: this.layer.annotate,
       middleware: async (context) => {
-        return this.parser.middleware(context, (c) => {
+        return this.layer.middleware(context, (c) => {
           return fn(c);
         });
       },
+      tag: [this.layer.tag, "!"].filter(Boolean).join(" -> "),
     };
   }
 
   match<
-    P extends FlatParser<
+    P extends FlatLayer<
       any,
       ProvidesContext,
       NextReturns,
@@ -279,7 +285,7 @@ export class Chain<
     >
   >(
     fn: (
-      parser: FlatParser<
+      layer: FlatLayer<
         ProvidesContext,
         RequiresContext,
         Returns,
@@ -289,40 +295,51 @@ export class Chain<
       >
     ) => P[]
   ): Chain<
-    ParserConfig<P>["context"]["out"],
+    LayerConfig<P>["context"]["out"],
     RequiresContext,
     Returns,
-    ParserConfig<P>["return"]["in"],
-    ParserConfig<P>["annotation"]["out"],
+    LayerConfig<P>["return"]["in"],
+    LayerConfig<P>["annotation"]["out"],
     RequiresAnnotation
   > {
-    const parsers = typeof fn === "function" ? fn(this.parser) : fn;
+    const layers = typeof fn === "function" ? fn(this.layer) : fn;
 
     return new Chain<
-      ParserConfig<P>["context"]["out"],
+      LayerConfig<P>["context"]["out"],
       RequiresContext,
       Returns,
-      ParserConfig<P>["return"]["in"],
+      LayerConfig<P>["return"]["in"],
       ProvidesAnnotation,
       RequiresAnnotation
     >({
       annotate: async (annotations, next) => {
-        return this.parser.annotate(annotations, async (annotations) => {
-          for (const parser of parsers) {
-            await parser.annotate(annotations, next);
+        return this.layer.annotate(annotations, async (annotations) => {
+          for (const layer of layers) {
+            await layer.annotate(annotations, next);
           }
         });
       },
       middleware: async (context, next) => {
-        return this.parser.middleware(context, async (context) => {
-          for (const parser of parsers) {
-            const result = await parser.middleware(context, next);
+        return this.layer.middleware(context, async (context) => {
+          for (const layer of layers) {
+            const result = await layer.middleware(context, next);
             if (result) {
               return result;
             }
           }
         });
       },
+      tag: [
+        this.layer.tag,
+        `(` +
+          layers
+            .map((p) => p.tag && `(${p.tag})`)
+            .filter(Boolean)
+            .join(" | ") +
+          ")",
+      ]
+        .filter(Boolean)
+        .join(" -> "),
     });
   }
 }
@@ -335,7 +352,7 @@ export class Chain<
  * It is basically to make TypeScript infer better.
  */
 export function continues<Context, Returns, Ann, C2, R2, A2>(
-  _from?: Parser<{
+  _from?: Layer<{
     annotation: { in: A2; out: Ann };
     context: { in: C2; out: Context };
     return: { in: Returns; out: R2 };
@@ -348,8 +365,8 @@ export function continues<Context, Returns, Ann, C2, R2, A2>(
 }
 
 // TODO: this can be cool
-// export declare function createRoutingPaths<P extends Parser<any>>(): (
-//   path: ParserConfig<P>["annotation"]["out"] extends infer R
+// export declare function createRoutingPaths<P extends Layer<any>>(): (
+//   path: LayerConfig<P>["annotation"]["out"] extends infer R
 //     ? R extends { path: string; method: string }
 //       ? {
 //           [Obj in R as Obj["path"]]: "GET" extends Obj["method"]

@@ -10,16 +10,18 @@
   "types": "./dist/index.d.ts",
   "scripts": {
     "build": "tsup",
-    "test": "vitest"
+    "test": "vitest",
+    "benchmark": "vitest bench"
   },
   "keywords": [],
   "author": "Gal Schlezinger <gal@spitfire.co.il>",
   "license": "MIT",
   "devDependencies": {
     "@edge-runtime/vm": "^2.1.2",
+    "regexparam": "^2.0.1",
+    "trouter": "^3.2.1",
     "tsup": "^6.7.0",
     "typescript": "^5.0.3",
-    "urlpattern-polyfill": "^6.0.2",
     "vite": "^4.2.1",
     "vitest": "^0.30.1",
     "vitest-github-actions-reporter": "^0.10.0"

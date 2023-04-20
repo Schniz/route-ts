@@ -1,4 +1,4 @@
-import type { HttpContext, Parser } from "../v2";
+import type { HttpContext, Layer } from "../v2";
 import type { Attaches, Passthrough } from "./type-modifiers";
 
 export type OpenApiAnnotationProvider = {
@@ -9,7 +9,7 @@ export type OpenApiRequirements = OpenApiAnnotationProvider & {
   method: string;
   path: string;
 };
-export function openApi<Context extends HttpContext, Ann>(): Parser<{
+export function openApi<Context extends HttpContext, Ann>(): Layer<{
   annotation: Attaches<Ann, OpenApiAnnotationProvider>;
   context: Passthrough<Context>;
   return: Passthrough<Response>;
@@ -48,7 +48,7 @@ export function registerOpenApi<
   Context,
   Returns,
   Ann extends OpenApiRequirements
->(): Parser<{
+>(): Layer<{
   annotation: Passthrough<Ann>;
   context: Passthrough<Context>;
   return: Passthrough<Returns>;

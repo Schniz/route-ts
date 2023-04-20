@@ -1,4 +1,4 @@
-import type { HttpContext, Parser } from "../v2";
+import type { HttpContext, Layer } from "../v2";
 import type { Attaches, Passthrough } from "./type-modifiers";
 
 type HttpMethod =
@@ -16,7 +16,7 @@ export function method<
   Annotations
 >(
   method: M
-): Parser<{
+): Layer<{
   context: Attaches<Context, { method: M }>;
   return: Passthrough<Response>;
   annotation: Attaches<Annotations, { method: M }>;

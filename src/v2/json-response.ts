@@ -1,4 +1,4 @@
-import type { HttpContext, Parser } from "../v2";
+import type { HttpContext, Layer } from "../v2";
 import type { Passthrough } from "./type-modifiers";
 
 export type Serializable =
@@ -21,7 +21,7 @@ export function jsonResponse<
   Annotations
 >(params?: {
   skipIfHeaderMissing: boolean;
-}): Parser<{
+}): Layer<{
   context: Passthrough<Context>;
   return: { out: Response; in: JsonResponse };
   annotation: Passthrough<Annotations>;

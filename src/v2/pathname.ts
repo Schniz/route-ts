@@ -1,5 +1,6 @@
-import type { Parser } from "../v2";
+import type { Layer } from "../v2";
 import type { Attaches, Passthrough } from "./type-modifiers";
+import { parse } from "regexparam";
 
 type NormalizeParam<T extends string> = T extends `${infer Prefix}*`
   ? [Prefix, string]
@@ -25,7 +26,7 @@ export function pathname<
   Pathname extends string
 >(
   path: Pathname
-): Parser<{
+): Layer<{
   context: Attaches<
     Env,
     { path: { route: Pathname; params: ParamsFromPath<Pathname> } }
@@ -33,21 +34,37 @@ export function pathname<
   annotation: Attaches<Ann, { path: Pathname }>;
   return: Passthrough<Returns>;
 }> {
-  const pattern = new URLPattern({ pathname: path });
+  // const pattern = new URLPattern({ pathname: path });
+  const regex = parse(path);
   return {
+    tag: `pathname(${path})`,
     annotate: (a, next) => next({ ...a, path }),
     middleware: async (context, next) => {
-      const parts = pattern.exec(context.url);
-      if (!parts) {
-        return undefined;
+      const match = regex.pattern.exec(context.url.pathname);
+      if (!match) return undefined;
+      const params: Record<string, string> = {};
+      for (let i = 1; i < match.length; i++) {
+        params[regex.keys[i - 1]] = match[i];
       }
       return next({
         ...context,
         path: {
           route: path,
-          params: parts.pathname.groups as ParamsFromPath<Pathname>,
+          params: params as unknown as ParamsFromPath<Pathname>,
         },
       });
+
+      // const parts = pattern.exec(context.url);
+      // if (!parts) {
+      //   return undefined;
+      // }
+      // return next({
+      //   ...context,
+      //   path: {
+      //     route: path,
+      //     params: parts.pathname.groups as ParamsFromPath<Pathname>,
+      //   },
+      // });
     },
   };
 }
