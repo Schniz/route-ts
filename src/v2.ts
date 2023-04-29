@@ -12,7 +12,9 @@ type MaybePromise<T> = T | Promise<T>;
  * @template Returns the type of the return value
  * @template Env the input type
  */
-type NextFn<Returns, Env> = (env: Env) => MaybePromise<Returns | undefined>;
+export type NextFn<Returns, Env> = (
+  env: Env
+) => MaybePromise<Returns | undefined>;
 type Middleware<ProvidesContext, RequiresContext, Returns, NextReturns> = (
   context: RequiresContext,
   next: NextFn<NextReturns, ProvidesContext>

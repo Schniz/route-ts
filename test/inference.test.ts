@@ -1,5 +1,7 @@
 import { test, expectTypeOf, describe } from "vitest";
 import * as R from "../src";
+import { NextFn } from "../src/v2";
+import { effectful } from "../src/v2/effectful";
 
 describe("http()", () => {
   test("expects a Response value from handler", () => {
@@ -66,5 +68,17 @@ describe("method()", () => {
         method: "POST";
       }>();
     });
+  });
+});
+
+import * as Effect from "@effect/io/Effect";
+import * as Logger from "@effect/io/Logger";
+describe("effectful()", () => {
+  test("expects an Effect value from handler", () => {
+    const chain = new R.Chain(R.http()).with(effectful());
+    const expectHandlerResult = expectTypeOf(chain.handler).parameter(0).returns
+      .resolves;
+    expectHandlerResult.not.toBeAny();
+    expectHandlerResult.toEqualTypeOf<Effect.Effect<never, never, Response>>();
   });
 });

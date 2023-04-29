@@ -2,6 +2,8 @@ lockfileVersion: 5.4
 
 specifiers:
   '@edge-runtime/vm': ^2.1.2
+  '@effect/data': ^0.12.2
+  '@effect/io': ^0.25.6
   regexparam: ^2.0.1
   trouter: ^3.2.1
   tsup: ^6.7.0
@@ -12,6 +14,8 @@ specifiers:
 
 devDependencies:
   '@edge-runtime/vm': 2.1.2
+  '@effect/data': 0.12.2
+  '@effect/io': 0.25.6
   regexparam: 2.0.1
   trouter: 3.2.1
   tsup: 6.7.0_typescript@5.0.3
@@ -45,6 +49,16 @@ packages:
     engines: {node: '>=14'}
     dependencies:
       '@edge-runtime/primitives': 2.1.2
+    dev: true
+
+  /@effect/data/0.12.2:
+    resolution: {integrity: sha512-bmWRTcsSRG1FlBswT+D8SxW6r3c4B3pKJrjYfitCD03tXHnup5gLHaWqbFgIjiyYITS+UsJRRjVrNxvyGG4ZNQ==}
+    dev: true
+
+  /@effect/io/0.25.6:
+    resolution: {integrity: sha512-08cJ5KkkArhxGig5UmoD/xFq2gsRGVWcVsk5OyitZuXzWO4Pd24zusqA8gtTtmeEmdTcN966JQpalWOnPPoatA==}
+    dependencies:
+      '@effect/data': 0.12.2
     dev: true
 
   /@esbuild/android-arm/0.17.15:

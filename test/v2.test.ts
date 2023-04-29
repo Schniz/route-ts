@@ -1,4 +1,4 @@
-import { Chain, http, continues, ParserConfig } from "../src/v2";
+import { Chain, http, continues } from "../src/v2";
 import { method } from "../src/v2/method";
 import { pathname } from "../src/v2/pathname";
 import { jsonResponse } from "../src/v2/json-response";
