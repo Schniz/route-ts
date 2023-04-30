@@ -1,6 +1,7 @@
 import * as Route from "../src/effectful";
-import { test, assert, expect } from "vitest";
+import { test, assert, expect, vitest } from "vitest";
 import { Effect, pipe, Option, Context } from "../src/effectful/dependencies";
+import * as OpenApi from "../src/effectful/openapi";
 
 test(`effectful`, async () => {
   const value = pipe(
@@ -8,7 +9,7 @@ test(`effectful`, async () => {
     Route.method("GET"),
     Route.pathname("/hello/:world"),
     Route.jsonResponse<string>(),
-    Route.handler(
+    Route.handleEffect(
       Effect.gen(function* ($) {
         const world = yield* $(Route.PathParam("world"));
         return { body: "Hello from " + world, status: 200, headers: {} };
@@ -28,10 +29,12 @@ test(`match`, async () => {
   const Db = Context.Tag<DbId, DbService>();
 
   const get_hello_param = pipe(
-    Route.http<DbId>(),
+    Route.http(),
+    Route.requires(Db),
     Route.method("GET"),
     Route.pathname("/hello/:param1"),
-    Route.handler(
+    OpenApi.description("just prints a param coming from the url"),
+    Route.handleEffect(
       Effect.gen(function* ($) {
         const db = yield* $(Db);
         const param = yield* $(Route.PathParam("param1"));
@@ -43,20 +46,26 @@ test(`match`, async () => {
       })
     )
   );
+
   const route = pipe(
     Route.root(),
-    Route.provideServiceEffect(
-      Db,
-      Effect.succeed({ get: () => "from service!" })
-    ),
+    OpenApi.endpoint(),
+    Route.provide(Db, { get: () => "from service!" }),
     Route.match((base) => {
       return [
-        get_hello_param,
+        pipe(
+          get_hello_param,
+          // read the annotations from base.
+          // I wonder how I can make this automatic?
+          Route.mergeAnnotations(base),
+          OpenApi.register()
+        ),
         pipe(
           base,
           Route.method("GET"),
           Route.pathname("/hello/:param1/:param2"),
-          Route.handler(
+          OpenApi.register(),
+          Route.handleEffect(
             Effect.gen(function* ($) {
               const param1 = yield* $(Route.PathParam("param1"));
               const param2 = yield* $(Route.PathParam("param2"));
@@ -64,10 +73,38 @@ test(`match`, async () => {
             })
           )
         ),
+
+        pipe(
+          base,
+          Route.method("POST"),
+          Route.handlePromise(async (context) => {
+            const url = context.get(Route.HttpUrl);
+            const db = context.get(Db);
+
+            return new Response(`POSTed to ${url.pathname}`);
+          })
+        ),
       ];
     }),
     Route.toEffect
   );
+
+  {
+    const res = pipe(
+      route,
+      Route.withRequest(new Request("https://example.com/api/docs")),
+      Effect.runSync
+    );
+    assert(Option.isSome(res));
+    assert.deepEqual(await res.value.json(), [
+      {
+        method: "GET",
+        pathname: "/hello/:param1",
+        "@openapi/description": "just prints a param coming from the url",
+      },
+      { method: "GET", pathname: "/hello/:param1/:param2" },
+    ]);
+  }
 
   {
     const res = pipe(
@@ -90,6 +127,20 @@ test(`match`, async () => {
     assert.equal(await res.value.text(), "/hello/:param1: a");
     assert.equal(res.value.headers.get("x-db.get"), "from service!");
   }
+  {
+    const res = await pipe(
+      route,
+      Route.withRequest(
+        new Request("https://example.com/literally/anything/goes", {
+          method: "POST",
+        })
+      ),
+      Effect.runPromise
+    );
+
+    assert(Option.isSome(res));
+    assert.equal(await res.value.text(), "POSTed to /literally/anything/goes");
+  }
 
   expect(() =>
     pipe(
@@ -101,4 +152,17 @@ test(`match`, async () => {
       Option.getOrThrow
     )
   ).toThrow();
+});
+
+test("pathname is type safe", () => {
+  pipe(
+    Route.root(),
+    // @ts-expect-error we don't have a "hello" param
+    Route.handleEffect(
+      Effect.gen(function* ($) {
+        yield* $(Route.PathParam("hello"));
+        return new Response("hi");
+      })
+    )
+  );
 });

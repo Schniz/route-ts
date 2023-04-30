@@ -1,6 +1,5 @@
 import { Context, Effect, pipe, Function } from "./dependencies";
 import { Nothing, Route } from "./types";
-import { provideServiceEffect } from "./mapping";
 
 export type HttpRequestId = { readonly _: unique symbol };
 /**

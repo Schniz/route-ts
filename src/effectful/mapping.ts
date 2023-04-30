@@ -64,6 +64,31 @@ export function provideServiceEffect<T extends Context.Tag<any, any>, TR, TE>(
   };
 }
 
+export function provide<T extends Context.Tag<any, any>>(
+  service: T,
+  implementation: Context.Tag.Service<T>
+) {
+  return <Ann, Rin, Rout, Ein, Eout, Ain, Aout>(
+    route: Route<Ann, Rin, Rout, Ein, Eout, Ain, Aout>
+  ): Route<
+    Ann,
+    Rin,
+    Rout | Context.Tag.Identifier<T>,
+    Ein,
+    Eout,
+    Ain,
+    Aout
+  > => {
+    return {
+      ...route,
+      handler: (next) =>
+        route.handler(
+          pipe(next, Effect.provideService(service, implementation))
+        ),
+    };
+  };
+}
+
 export function provideSomeServiceEffect<
   T extends Context.Tag<any, any>,
   TR,
@@ -95,31 +120,6 @@ export function provideSomeServiceEffect<
             return yield* $(next, Effect.provideService(tag, service.value));
           })
         ),
-    };
-  };
-}
-
-export function flatMapHandler<
-  Rin,
-  Rout,
-  Ein,
-  Eout,
-  Ain,
-  Aout,
-  Rout2,
-  Eout2,
-  Aout2
->(
-  cb: (
-    handler: Route<Nothing, Rin, Rout, Ein, Eout, Ain, Aout>["handler"]
-  ) => Route<Nothing, Rin, Rout2, Ein, Eout2, Ain, Aout2>["handler"]
-) {
-  return <Ann>(
-    route: Route<Ann, Rin, Rout, Ein, Eout, Ain, Aout>
-  ): Route<Ann, Rin, Rout2, Ein, Eout2, Ain, Aout2> => {
-    return {
-      ...route,
-      handler: cb(route.handler),
     };
   };
 }

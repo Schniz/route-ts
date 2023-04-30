@@ -7,3 +7,5 @@ export * from "./effectful/pathname";
 export * from "./effectful/request";
 export * from "./effectful/types";
 export * from "./effectful/match";
+export * from "./effectful/requires";
+export * from "./effectful/resume";
