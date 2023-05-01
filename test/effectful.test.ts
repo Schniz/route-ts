@@ -1,6 +1,15 @@
 import * as Route from "../src/effectful";
 import { test, assert, expect, vitest } from "vitest";
-import { Effect, pipe, Option, Context } from "../src/effectful/dependencies";
+import {
+  Effect,
+  pipe,
+  Option,
+  Context,
+  Fiber,
+  Exit,
+  Duration,
+  Scope,
+} from "../src/effectful/dependencies";
 import * as OpenApi from "../src/effectful/openapi";
 
 test(`effectful`, async () => {
@@ -27,6 +36,7 @@ test(`match`, async () => {
   type DbId = { readonly _: unique symbol };
   type DbService = { get(): string };
   const Db = Context.Tag<DbId, DbService>();
+  const finalizerCalled = vitest.fn();
 
   const get_hello_param = pipe(
     Route.http(),
@@ -79,10 +89,43 @@ test(`match`, async () => {
           Route.method("POST"),
           Route.handlePromise(async (context) => {
             const url = context.get(Route.HttpUrl);
-            const db = context.get(Db);
-
             return new Response(`POSTed to ${url.pathname}`);
           })
+        ),
+
+        pipe(
+          base,
+          Route.pathname("/long-running"),
+          Route.withRequestScope(),
+          Route.handleEffect(
+            pipe(
+              Route.RequestScope,
+              Effect.flatMap((scope) =>
+                pipe(
+                  Effect.gen(function* ($) {
+                    yield* $(Effect.sleep(Duration.millis(100)));
+                    yield* $(
+                      Scope.addFinalizer(scope, Effect.sync(finalizerCalled))
+                    );
+                    return new Response("waited!");
+                  }),
+                  Effect.interruptible,
+                  Effect.forkIn(scope)
+                )
+              ),
+              Effect.flatMap((fiber) =>
+                Effect.gen(function* ($) {
+                  const exit = yield* $(Fiber.await(fiber));
+                  if (Exit.isInterrupted(exit)) {
+                    return new Response("interrupted!");
+                  } else if (Exit.isFailure(exit)) {
+                    return new Response("failed!");
+                  }
+                  return exit.value;
+                })
+              )
+            )
+          )
         ),
       ];
     }),
@@ -152,6 +195,60 @@ test(`match`, async () => {
       Option.getOrThrow
     )
   ).toThrow();
+
+  {
+    finalizerCalled.mockReset();
+    const res = await pipe(
+      route,
+      Route.withRequest(new Request("https://example.com/long-running")),
+      Effect.runPromise
+    );
+
+    assert(Option.isSome(res));
+    expect(finalizerCalled).not.toHaveBeenCalled();
+    assert.equal(await res.value.text(), "waited!");
+  }
+
+  {
+    finalizerCalled.mockReset();
+    const controller = new AbortController();
+    const res$ = pipe(
+      route,
+      Route.withRequest(
+        new Request("https://example.com/long-running", {
+          signal: controller.signal,
+        })
+      ),
+      Effect.runPromise
+    );
+    controller.abort();
+
+    const res = await res$;
+    assert(Option.isSome(res));
+    expect(finalizerCalled).not.toHaveBeenCalled();
+    assert.equal(await res.value.text(), "interrupted!");
+  }
+
+  {
+    finalizerCalled.mockReset();
+    const controller = new AbortController();
+    const res$ = pipe(
+      route,
+      Route.withRequest(
+        new Request("https://example.com/long-running", {
+          signal: controller.signal,
+        })
+      ),
+      Effect.runPromise
+    );
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    controller.abort();
+
+    const res = await res$;
+    assert(Option.isSome(res));
+    assert.equal(await res.value.text(), "interrupted!");
+    expect(finalizerCalled).not.toHaveBeenCalled();
+  }
 });
 
 test("pathname is type safe", () => {

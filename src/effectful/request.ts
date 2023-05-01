@@ -1,4 +1,13 @@
-import { Context, Effect, pipe, Function } from "./dependencies";
+import {
+  Context,
+  Effect,
+  pipe,
+  Function,
+  Scope,
+  Exit,
+  Fiber,
+} from "./dependencies";
+import { provideServiceEffect } from "./mapping";
 import { Nothing, Route } from "./types";
 
 export type HttpRequestId = { readonly _: unique symbol };
@@ -73,4 +82,55 @@ export function empty<R = never, E = never, A = Response>(): Route<
 
 export function withRequest(request: Request) {
   return Effect.provideService(HttpRequest, request);
+}
+
+export type ExecutionScopeId = { readonly _: unique symbol };
+export const RequestScope = Context.Tag<ExecutionScopeId, Scope.Scope>();
+
+export function withRequestScope() {
+  return <Ann, Rin, Rout, Ein, Eout, Ain, Aout>(
+    route: Route<Ann, Rin, Rout | HttpRequestId, Ein, Eout, Ain, Aout>
+  ) => {
+    return pipe(
+      route,
+      provideServiceEffect(
+        RequestScope,
+        Effect.gen(function* ($) {
+          const scope = yield* $(Scope.make());
+          const request = yield* $(HttpRequest);
+          const lookup = yield* $(
+            closeScopeOnAbortSignal(scope, request.signal),
+            Effect.forkIn(scope)
+          );
+          yield* $(Scope.addFinalizer(scope, Fiber.interrupt(lookup)));
+
+          return scope;
+        })
+      )
+    );
+  };
+}
+
+const closeScopeOnAbortSignal = (
+  scope: Scope.CloseableScope,
+  signal: AbortSignal
+) =>
+  Effect.gen(function* ($) {
+    yield* $(waitForAbortSignal(signal));
+    yield* $(Scope.close(scope, Exit.unit()));
+  });
+
+function waitForAbortSignal(signal: AbortSignal) {
+  return Effect.asyncInterrupt<never, never, void>((cb) => {
+    if (signal.aborted) {
+      cb(Effect.unit());
+      return Effect.succeed(() => {});
+    }
+
+    const abort = () => pipe(Effect.unit(), cb);
+    signal.addEventListener("abort", abort);
+    return Effect.succeed(() => {
+      signal.removeEventListener("abort", abort);
+    });
+  });
 }
