@@ -8,6 +8,21 @@
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
+  "typesVersions": {
+    "*": {
+      "*": [
+        "dist/types/*"
+      ]
+    }
+  },
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    },
+    "./effectful": "./dist/effectful.mjs",
+    "./effectful.js": "./dist/effectful.js"
+  },
   "scripts": {
     "build": "tsup",
     "test": "vitest",
