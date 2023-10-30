@@ -9,6 +9,7 @@ import {
   Exit,
   Duration,
   Scope,
+  Schema,
 } from "../src/effectful/dependencies";
 import * as OpenApi from "../src/effectful/openapi";
 
@@ -59,16 +60,56 @@ test(`match`, async () => {
 
   const route = pipe(
     Route.root(),
-    OpenApi.endpoint(),
+    OpenApi.builder({ info: { title: "my service", version: "1.0.0" } }),
     Route.provide(Db, { get: () => "from service!" }),
     Route.match((base) => {
       return [
+        pipe(
+          base,
+          Route.method("GET"),
+          Route.pathname("/api/openapi.json"),
+          Route.handleSync((context) => {
+            const schema = context.get(OpenApi.OpenApiSchema).build();
+            return new Response(JSON.stringify(schema), {
+              headers: { "content-type": "application/json" },
+            });
+          })
+        ),
         pipe(
           get_hello_param,
           // read the annotations from base.
           // I wonder how I can make this automatic?
           Route.mergeAnnotations(base),
           OpenApi.register()
+        ),
+        pipe(
+          base,
+          Route.method("POST"),
+          Route.pathname("/hello/:param1"),
+          Route.jsonResponse2(
+            Schema.struct({
+              url: Schema.string,
+              params: Schema.struct({
+                param1: pipe(
+                  Schema.string,
+                  Schema.description("coming from the pathname")
+                ),
+              }),
+            })
+          ),
+          OpenApi.register(),
+          Route.handleSync((context) => {
+            return {
+              body: {
+                url: context.get(Route.HttpUrl).toString(),
+                params: {
+                  param1: context.get(Route.PathParam("param1")),
+                },
+              },
+              status: 200,
+              headers: {},
+            };
+          })
         ),
         pipe(
           base,
@@ -135,18 +176,88 @@ test(`match`, async () => {
   {
     const res = pipe(
       route,
-      Route.withRequest(new Request("https://example.com/api/docs")),
+      Route.withRequest(new Request("https://example.com/api/openapi.json")),
       Effect.runSync
     );
     assert(Option.isSome(res));
-    assert.deepEqual(await res.value.json(), [
-      {
-        method: "GET",
-        pathname: "/hello/:param1",
-        "@openapi/description": "just prints a param coming from the url",
+    assert.deepEqual(await res.value.json(), {
+      info: {
+        title: "my service",
+        version: "1.0.0",
       },
-      { method: "GET", pathname: "/hello/:param1/:param2" },
-    ]);
+      openapi: "3.0.0",
+      paths: {
+        "/hello/{param1}": {
+          get: {
+            description: "just prints a param coming from the url",
+            parameters: [
+              {
+                in: "path",
+                name: "param1",
+                required: true,
+                schema: {
+                  type: "string",
+                },
+              },
+            ],
+            responses: {
+              200: {
+                content: {},
+                description: "Success",
+              },
+            },
+          },
+          post: {
+            parameters: [
+              {
+                in: "path",
+                name: "param1",
+                required: true,
+                schema: {
+                  type: "string",
+                },
+              },
+            ],
+            responses: {
+              200: {
+                content: {
+                  "application/json": {},
+                },
+                description: "Success",
+              },
+            },
+          },
+        },
+        "/hello/{param1}/{param2}": {
+          get: {
+            parameters: [
+              {
+                in: "path",
+                name: "param1",
+                required: true,
+                schema: {
+                  type: "string",
+                },
+              },
+              {
+                in: "path",
+                name: "param2",
+                required: true,
+                schema: {
+                  type: "string",
+                },
+              },
+            ],
+            responses: {
+              200: {
+                content: {},
+                description: "Success",
+              },
+            },
+          },
+        },
+      },
+    });
   }
 
   {

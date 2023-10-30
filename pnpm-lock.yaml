@@ -4,6 +4,8 @@ specifiers:
   '@edge-runtime/vm': ^2.1.2
   '@effect/data': ^0.12.2
   '@effect/io': ^0.25.6
+  '@effect/schema': ^0.17.2
+  openapi-types: ^12.1.0
   regexparam: ^2.0.1
   trouter: ^3.2.1
   tsup: ^6.7.0
@@ -16,6 +18,8 @@ devDependencies:
   '@edge-runtime/vm': 2.1.2
   '@effect/data': 0.12.2
   '@effect/io': 0.25.6
+  '@effect/schema': 0.17.2
+  openapi-types: 12.1.0
   regexparam: 2.0.1
   trouter: 3.2.1
   tsup: 6.7.0_typescript@5.0.3
@@ -59,6 +63,14 @@ packages:
     resolution: {integrity: sha512-08cJ5KkkArhxGig5UmoD/xFq2gsRGVWcVsk5OyitZuXzWO4Pd24zusqA8gtTtmeEmdTcN966JQpalWOnPPoatA==}
     dependencies:
       '@effect/data': 0.12.2
+    dev: true
+
+  /@effect/schema/0.17.2:
+    resolution: {integrity: sha512-HcXZBGtPzhuX/RnIkaVIlYGp1ThuAyl34YNhxrhUQ8TdOnRFkx3tAbmXYpkWkrlo92Ou+/Z0ZixEaSFn7x2shw==}
+    dependencies:
+      '@effect/data': 0.12.2
+      '@effect/io': 0.25.6
+      fast-check: 3.8.1
     dev: true
 
   /@esbuild/android-arm/0.17.15:
@@ -796,6 +808,13 @@ packages:
       strip-final-newline: 2.0.0
     dev: true
 
+  /fast-check/3.8.1:
+    resolution: {integrity: sha512-WRll9CUIz6jWKgByFlHT2M/1BY3F7lewKl5BBIz5VHAy7B8y5iklK9rVm922kx+0x1hJqdkffuTs008xfIgytQ==}
+    engines: {node: '>=8.0.0'}
+    dependencies:
+      pure-rand: 6.0.2
+    dev: true
+
   /fast-diff/1.2.0:
     resolution: {integrity: sha512-xJuoT5+L99XlZ8twedaRf6Ax2TgQVxvgZOYoPKqZufmJib0tL2tegPBOZb1pVNgIhlqDlA0eO0c3wBvQcmzx4w==}
     dev: true
@@ -1099,6 +1118,10 @@ packages:
       mimic-fn: 2.1.0
     dev: true
 
+  /openapi-types/12.1.0:
+    resolution: {integrity: sha512-XpeCy01X6L5EpP+6Hc3jWN7rMZJ+/k1lwki/kTmWzbVhdPie3jd5O2ZtedEx8Yp58icJ0osVldLMrTB/zslQXA==}
+    dev: true
+
   /p-limit/4.0.0:
     resolution: {integrity: sha512-5b0R4txpzjPWVw/cXXUResoD4hb6U/x9BH08L7nw+GN1sezDzPdxeRvpc9c433fZhBan/wusjbCsqwqm4EIBIQ==}
     engines: {node: ^12.20.0 || ^14.13.1 || >=16.0.0}
@@ -1192,6 +1215,10 @@ packages:
   /punycode/2.3.0:
     resolution: {integrity: sha512-rRV+zQD8tVFys26lAGR9WUuS4iUAngJScM+ZRSKtvl5tKeZ2t5bvdNFdNHBW9FWR4guGHlgmsZ1G7BSm2wTbuA==}
     engines: {node: '>=6'}
+    dev: true
+
+  /pure-rand/6.0.2:
+    resolution: {integrity: sha512-6Yg0ekpKICSjPswYOuC5sku/TSWaRYlA0qsXqJgM/d/4pLPHPuTxK7Nbf7jFKzAeedUhR8C7K9Uv63FBsSo8xQ==}
     dev: true
 
   /queue-microtask/1.2.3:
