@@ -1,4 +1,4 @@
-import { Effect, pipe, Option, flow, Context } from "./effectful/dependencies";
+import { Effect, pipe, Option, flow, Context } from "effect";
 import {
   HttpRequest,
   withRequest,

@@ -1,4 +1,4 @@
-import { Context, Effect, Option, pipe } from "./dependencies";
+import { Context, Effect, Option, pipe } from "effect";
 import { annotate, described, provideSomeServiceEffect } from "./mapping";
 import { HttpRequest, HttpRequestId } from "./request";
 import { Route } from "./types";

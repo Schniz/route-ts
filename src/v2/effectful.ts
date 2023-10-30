@@ -1,5 +1,5 @@
 import { Layer } from "../v2";
-import * as Effect from "@effect/io/Effect";
+import { Effect } from "effect";
 import { Passthrough } from "./type-modifiers";
 
 export function effectful<Env, Returns, Ann>(): Layer<{

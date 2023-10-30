@@ -1,4 +1,4 @@
-import { Effect, pipe, Option, Context } from "./dependencies";
+import { Effect, pipe, Option, Context } from "effect";
 import { joinDesc } from "./helpers";
 import { Route } from "./types";
 

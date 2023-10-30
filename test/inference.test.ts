@@ -1,6 +1,5 @@
 import { test, expectTypeOf, describe } from "vitest";
 import * as R from "../src";
-import { NextFn } from "../src/v2";
 import { effectful } from "../src/v2/effectful";
 
 describe("http()", () => {
@@ -71,8 +70,7 @@ describe("method()", () => {
   });
 });
 
-import * as Effect from "@effect/io/Effect";
-import * as Logger from "@effect/io/Logger";
+import { Effect } from "effect";
 describe("effectful()", () => {
   test("expects an Effect value from handler", () => {
     const chain = new R.Chain(R.http()).with(effectful());

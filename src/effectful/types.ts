@@ -1,4 +1,4 @@
-import { Option, Effect } from "./dependencies";
+import { Option, Effect } from "effect";
 
 export type Nothing = Record<never, never>;
 

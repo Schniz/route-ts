@@ -1,12 +1,4 @@
-import {
-  Context,
-  Effect,
-  pipe,
-  Function,
-  Scope,
-  Exit,
-  Fiber,
-} from "./dependencies";
+import { Context, Effect, pipe, Function, Scope, Exit, Fiber } from "effect";
 import { provideServiceEffect } from "./mapping";
 import { Nothing, Route } from "./types";
 
@@ -117,17 +109,17 @@ const closeScopeOnAbortSignal = (
 ) =>
   Effect.gen(function* ($) {
     yield* $(waitForAbortSignal(signal));
-    yield* $(Scope.close(scope, Exit.unit()));
+    yield* $(Scope.close(scope, Exit.unit));
   });
 
 function waitForAbortSignal(signal: AbortSignal) {
-  return Effect.asyncInterrupt<never, never, void>((cb) => {
+  return Effect.async<never, never, void>((cb) => {
     if (signal.aborted) {
-      cb(Effect.unit());
+      cb(Effect.unit);
       return Effect.succeed(() => {});
     }
 
-    const abort = () => pipe(Effect.unit(), cb);
+    const abort = () => cb(Effect.unit);
     signal.addEventListener("abort", abort);
     return Effect.succeed(() => {
       signal.removeEventListener("abort", abort);

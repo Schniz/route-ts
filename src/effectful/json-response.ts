@@ -1,4 +1,6 @@
-import { Option, ReadonlyArray, Schema, SchemaAST, pipe } from "./dependencies";
+import * as Schema from "@effect/schema/Schema";
+import * as SchemaAST from "@effect/schema/AST";
+import { Option, pipe } from "effect";
 import { annotate, described, mappedResponse } from "./mapping";
 import {
   OpenApiResponseContentSchemaId,
@@ -64,7 +66,7 @@ export function jsonResponse2<A extends Serializable, From>(
         ...current,
         [OpenApiResponseContentTypeId]: "application/json",
         [OpenApiResponseContentSchemaId]: pipe(
-          SchemaAST.getTo(schema.ast),
+          SchemaAST.to(schema.ast),
           SchemaAST.getAnnotation(SchemaAST.JSONSchemaAnnotationId),
           Option.getOrElse(() => undefined)
         ),

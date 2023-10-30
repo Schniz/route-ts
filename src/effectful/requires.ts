@@ -1,4 +1,4 @@
-import { Context, Effect, pipe } from "./dependencies";
+import { Context, Effect, pipe } from "effect";
 import { Route } from "./types";
 
 export function requires<R>(_tag?: Context.Tag<R, any>) {
@@ -16,7 +16,7 @@ export function requires<R>(_tag?: Context.Tag<R, any>) {
                 pipe(
                   Effect.context<Rout>(),
                   Effect.flatMap((rOut) =>
-                    pipe(next, Effect.provideContext(Context.merge(c, rOut)))
+                    pipe(next, Effect.provide(Context.merge(c, rOut)))
                   )
                 )
               )

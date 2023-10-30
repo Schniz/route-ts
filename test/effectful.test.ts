@@ -9,8 +9,8 @@ import {
   Exit,
   Duration,
   Scope,
-  Schema,
-} from "../src/effectful/dependencies";
+} from "effect";
+import * as Schema from "@effect/schema/Schema";
 import * as OpenApi from "../src/effectful/openapi";
 
 test(`effectful`, async () => {

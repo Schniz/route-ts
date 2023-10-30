@@ -1,16 +1,9 @@
 import { Route } from "./types";
-import {
-  Context,
-  Effect,
-  ReadonlyArray,
-  ReadonlyRecord,
-  pipe,
-} from "./dependencies";
+import { Context, Effect, ReadonlyArray, ReadonlyRecord, pipe } from "effect";
 import { HttpUrlId } from "./request";
 import { Method } from "./method";
 import { annotate, provideServiceEffect } from "./mapping";
 import { OpenAPIV3 } from "openapi-types";
-import { isNonEmptyArray } from "@effect/data/ReadonlyArray";
 
 type RouteDefinition = {
   pathname: string;
@@ -102,11 +95,11 @@ function buildOpenApiSchema(params: {
   return {
     openapi: "3.0.0",
     info: params.info,
-    paths: !isNonEmptyArray(params.endpoints)
+    paths: !ReadonlyArray.isNonEmptyArray(params.endpoints)
       ? {}
       : pipe(
           params.endpoints,
-          ReadonlyArray.group((a, b) => a.pathname === b.pathname),
+          ReadonlyArray.groupWith((a, b) => a.pathname === b.pathname),
           ReadonlyArray.map((defs): [string, OpenAPIV3.PathItemObject] => [
             convertPathnameIntoOpenApiEquivalent(defs[0].pathname),
             pipe(

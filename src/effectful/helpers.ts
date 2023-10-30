@@ -1,4 +1,4 @@
-import { Option, Effect } from "./dependencies";
+import { Option, Effect } from "effect";
 import { Route } from "./types";
 
 export const joinDesc = (desc: string, desc2: string) => `${desc} -> ${desc2}`;

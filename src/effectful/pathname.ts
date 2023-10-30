@@ -1,4 +1,4 @@
-import { Effect, Context, Option } from "./dependencies";
+import { Effect, Context, Option } from "effect";
 import { parse } from "regexparam";
 import { HttpRequestId, HttpUrl } from "./request";
 import { Route } from "./types";

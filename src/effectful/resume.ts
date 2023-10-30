@@ -1,4 +1,4 @@
-import { pipe } from "./dependencies";
+import { pipe } from "effect";
 import { annotate } from "./mapping";
 import { Route } from "./types";
 

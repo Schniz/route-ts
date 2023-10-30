@@ -1,6 +1,6 @@
-import { Effect, pipe, Option, Context } from "./dependencies";
+import { Effect, pipe, Option, Context } from "effect";
 import { joinDesc } from "./helpers";
-import { Nothing, Route } from "./types";
+import { Route } from "./types";
 
 export function described(
   desc: string

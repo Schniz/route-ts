@@ -1,4 +1,4 @@
-import { Effect, Option } from "./dependencies";
+import { Effect, Option } from "effect";
 import { AoutOf, EoutOf, RoutOf, Route } from "./types";
 
 export function match<
